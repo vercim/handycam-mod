@@ -17,15 +17,3 @@ Client-side Minecraft mod (1.21.4) that adds procedural camera motion. Built wit
 ## Architecture
 
 Each effect is a `ShakeLayer` that contributes a `CameraOffset` (pitch, yaw, roll, x, y, z) per frame. Offsets are composed by `CameraShakeSystem` and injected into the vanilla camera via Mixin. Motion primitives: `PerlinNoise`, `FractalNoise`, `SpringSimulator`.
-
-## Build
-
-```
-./gradlew build
-```
-
-Artifacts are output to `fabric/build/libs/` and `neoforge/build/libs/`.
-
-## Config
-
-`HandycamConfig` exposes per-layer intensity multipliers, editable at runtime via any compatible config UI.
