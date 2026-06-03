@@ -13,14 +13,12 @@ public final class CameraShakeSystem {
     // ── Layers ─────────────────────────────────────────────────────────────
     private static final LandingImpactLayer LANDING = new LandingImpactLayer();
     private static final DamageShakeLayer   DAMAGE  = new DamageShakeLayer();
-    private static final JumpShakeLayer     JUMP    = new JumpShakeLayer();
 
     private static final List<ShakeLayer> LAYERS = List.of(
         new IdleShakeLayer(),
         new WalkBobLayer(),
         LANDING,
         DAMAGE,
-        JUMP,
         new SprintSwayLayer()
     );
 
@@ -43,8 +41,6 @@ public final class CameraShakeSystem {
         if (!onGround) {
             if (wasOnGround) {
                 peakY = currentY;
-                float dy = (float) player.getDeltaMovement().y;
-                if (dy > 0.1f) JUMP.onJump();
             } else if (currentY > peakY) {
                 peakY = currentY;
             }
