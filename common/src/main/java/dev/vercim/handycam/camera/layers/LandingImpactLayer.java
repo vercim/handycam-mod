@@ -11,23 +11,42 @@ import net.fabricmc.api.Environment;
 @Environment(EnvType.CLIENT)
 public class LandingImpactLayer implements ShakeLayer {
 
-    // Stiffness=250, damping=31.6 ≈ critical (2*sqrt(250)=31.6)
-    private final SpringSimulator spring = new SpringSimulator(250f, 32f);
-    private float impactTarget = 0f;
+    // Pitch: fast stiff spring — slams down, snaps back quickly.
+    private final SpringSimulator pitchSpring = new SpringSimulator(200f, 28f);
+    // Roll/yaw: slightly looser — wobbles a beat longer after impact.
+    private final SpringSimulator rollSpring  = new SpringSimulator(140f, 24f);
+    private final SpringSimulator yawSpring   = new SpringSimulator(140f, 24f);
+
+    private float pitchTarget = 0f;
+    private float rollTarget  = 0f;
+    private float yawTarget   = 0f;
+
+    // Alternates roll/yaw direction each landing for natural variation.
+    private int side = 1;
 
     /**
-     * @param fallDistance net downward displacement in blocks.
-     *                     3-block fall → mild dip; 10-block fall → strong dip.
+     * @param fallDistance blocks fallen (peakY − landY).
+     *
+     * Strength formula: 1 − exp(−d / 7)
+     *   1 block  → 0.13   (barely noticeable)
+     *   3 blocks → 0.35   (mild)
+     *   7 blocks → 0.63   (strong)
+     *  14 blocks → 0.86   (very strong)
+     *  25 blocks → 0.97   (near max)
+     *  ∞         → 1.0    (hard cap)
      */
     public void onLand(float fallDistance) {
         HandycamConfig cfg = HandycamConfig.get();
         if (!cfg.landingEnabled) return;
 
-        // strength: nonlinear — small falls barely register, high falls are dramatic
-        // 3 blocks → strength≈0.5, 6 blocks → strength≈1.0
-        float strength = (float) Math.sqrt(Math.min(fallDistance / 6f, 1f));
-        // Negative pitch = camera dips downward on impact
-        impactTarget = -strength * cfg.landingIntensity * 4f;
+        float strength = 1f - (float) Math.exp(-fallDistance / 7f);
+        strength = Math.min(strength, 1f) * cfg.landingIntensity;
+
+        side = -side;
+
+        pitchTarget = -strength * cfg.landingPitchMax;
+        rollTarget  =  side * strength * cfg.landingRollMax;
+        yawTarget   =  side * strength * cfg.landingYawMax * 0.5f;
     }
 
     @Override
@@ -35,12 +54,17 @@ public class LandingImpactLayer implements ShakeLayer {
         HandycamConfig cfg = HandycamConfig.get();
         if (!cfg.landingEnabled) return CameraOffset.ZERO;
 
-        float pitchVal = spring.update(impactTarget, dt);
+        float pitch = pitchSpring.update(pitchTarget, dt);
+        float roll  = rollSpring .update(rollTarget,  dt);
+        float yaw   = yawSpring  .update(yawTarget,   dt);
 
-        // Exponentially decay the target toward 0 so the spring has something to
-        // return to.  τ ≈ 0.15 s  →  pow(0.0001, dt/0.15) ≈ e^(-dt/0.015)
-        impactTarget *= (float) Math.exp(-dt / 0.15f);
+        // Decay targets toward 0 so springs have a destination to return to.
+        // τ = 0.12 s for pitch (snappy), 0.18 s for roll/yaw (linger a bit).
+        pitchTarget *= (float) Math.exp(-dt / 0.12f);
+        rollTarget  *= (float) Math.exp(-dt / 0.18f);
+        yawTarget   *= (float) Math.exp(-dt / 0.18f);
 
-        return new CameraOffset(pitchVal * cfg.masterIntensity, 0f, 0f);
+        float m = cfg.masterIntensity;
+        return new CameraOffset(pitch * m, yaw * m, roll * m);
     }
 }

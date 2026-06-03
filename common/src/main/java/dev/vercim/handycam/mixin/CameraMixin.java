@@ -2,6 +2,7 @@ package dev.vercim.handycam.mixin;
 
 import dev.vercim.handycam.camera.CameraOffset;
 import dev.vercim.handycam.camera.CameraShakeSystem;
+import dev.vercim.handycam.config.HandycamConfig;
 import net.minecraft.client.Camera;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;

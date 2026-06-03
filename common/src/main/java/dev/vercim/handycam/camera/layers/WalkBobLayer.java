@@ -14,10 +14,11 @@ public class WalkBobLayer implements ShakeLayer {
     private static final float TWO_PI = (float) (2.0 * Math.PI);
     private static final float TICK_DT = 1f / 20f;
 
-    private final FractalNoise walkNoise = new FractalNoise(0xDEADBEEFL, 3, 0.5f, 0.5f);
+    // Multiple noise sources for layered, organic feel
+    private final FractalNoise verticalNoise = new FractalNoise(0xDEADBEEFL, 3, 0.5f, 0.5f);
+    private final FractalNoise lateralNoise  = new FractalNoise(0xCAFEBABEL, 3, 0.4f, 0.5f);
+    private final FractalNoise rollNoise     = new FractalNoise(0xBEEFC0DEL, 2, 0.3f, 0.6f);
 
-    // bobPhase is advanced in tick() at a fixed rate — keeps frequency stable
-    // regardless of frame rate
     private float bobPhase = 0f;
 
     @Override
@@ -28,8 +29,7 @@ public class WalkBobLayer implements ShakeLayer {
         float speed = state.horizontalSpeed;
         if (speed < 0.05f) return;
 
-        // walkBobFrequency is in Hz (cycles per second).
-        // Multiply by 2π to convert to rad/s, then by TICK_DT for radians/tick.
+        // Phase advances at fixed rate, scaled by speed
         bobPhase += speed * cfg.walkBobFrequency * TWO_PI * TICK_DT;
     }
 
@@ -41,23 +41,32 @@ public class WalkBobLayer implements ShakeLayer {
         float speed = state.horizontalSpeed;
         if (speed < 0.05f) return CameraOffset.ZERO;
 
-        // Vertical: head dips on each footfall (abs-sine = two dips per cycle)
-        float verticalBob = -(float) Math.abs(Math.sin(bobPhase))
+        // Primary bobbing pattern: abs-sine (two bumps per cycle) + fractal overlay
+        float baseBob = (float) Math.abs(Math.sin(bobPhase));
+        float verticalNoise = this.verticalNoise.get(bobPhase * 0.5f);
+        float verticalBob = -(baseBob * 0.7f + verticalNoise * 0.3f)
                             * cfg.walkBobIntensity * speed;
 
-        // Lateral: sway left-right at 2x frequency, smaller amplitude
-        float lateralBob  =  (float) Math.sin(bobPhase * 2f)
-                            * cfg.walkBobIntensity * speed * 0.35f;
+        // Lateral sway at 2x frequency: smoother side-to-side + fractal variation
+        float baseSway = (float) Math.sin(bobPhase * 2f);
+        float lateralNoise = this.lateralNoise.get(bobPhase * 0.7f);
+        float lateralBob = (baseSway * 0.7f + lateralNoise * 0.3f)
+                          * cfg.walkBobIntensity * speed * 0.4f;
 
-        // Noise deformation — irregular footfall feel
-        float noiseDeform = walkNoise.get(bobPhase * 0.5f)
-                            * cfg.walkBobIntensity * speed * cfg.walkNoiseAmount;
+        // Roll component: subtle camera tilt matching footstep cadence
+        float rollNoise = this.rollNoise.get(bobPhase * 0.6f);
+        float rollBob = (float) Math.sin(bobPhase * 2f) * 0.5f * rollNoise
+                       * cfg.walkBobIntensity * speed * 0.2f;
+
+        // Noise deformation for extra irregularity
+        float noiseDeform = this.verticalNoise.get(bobPhase * 0.3f)
+                           * cfg.walkBobIntensity * speed * cfg.walkNoiseAmount;
 
         float master = cfg.masterIntensity;
         return new CameraOffset(
             (verticalBob + noiseDeform) * master,
             lateralBob                  * master,
-            lateralBob * 0.25f          * master
+            rollBob                     * master
         );
     }
 }

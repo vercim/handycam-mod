@@ -21,31 +21,40 @@ public class HandycamConfig {
     public float masterIntensity = 1.0f;
 
     // ── Idle ───────────────────────────────────────────────────────────────
-    // idleIntensity = max amplitude in degrees (FractalNoise output is in [-1, 1])
     public boolean idleEnabled   = true;
-    public float   idleIntensity = 1.5f;   // amplitude scalar (Perlin peaks ~±0.3)
-    public float   idleFrequency = 0.5f;   // speed multiplier for noise time
+    public float   idleIntensity = 1.5f;
+    public float   idleFrequency = 0.5f;
 
     // ── Walk Bob ───────────────────────────────────────────────────────────
-    // walkBobFrequency = cycles per second at speed=1.0
     public boolean walkBobEnabled   = true;
-    public float   walkBobIntensity = 0.8f;   // max degrees of vertical dip
-    public float   walkBobFrequency = 1.6f;   // Hz — 1 full cycle every 0.625s
-    public float   walkNoiseAmount  = 0.15f;  // irregularity factor
+    public float   walkBobIntensity = 1.4f;   // degrees per axis at full speed
+    public float   walkBobFrequency = 1.6f;   // Hz at speed=1.0
+    public float   walkNoiseAmount  = 0.25f;
 
     // ── Landing ────────────────────────────────────────────────────────────
-    public boolean landingEnabled  = true;
-    public float   landingIntensity = 1.0f;   // multiplier on impact strength
+    public boolean landingEnabled   = true;
+    public float   landingIntensity = 1.0f;   // overall multiplier
+    public float   landingPitchMax  = 9.0f;   // max degrees of downward pitch slam
+    public float   landingRollMax   = 3.5f;   // max degrees of sideways roll
+    public float   landingYawMax    = 2.5f;   // max degrees of yaw jitter
 
     // ── Damage ─────────────────────────────────────────────────────────────
     public boolean damageEnabled   = true;
     public float   damageIntensity = 1.5f;
-    public float   damageDecay     = 1.2f;    // trauma units/sec lost
+    public float   damageDecay     = 1.2f;
 
-    // ── Sprint ─────────────────────────────────────────────────────────────
-    public boolean sprintEnabled = true;
-    public float   sprintRoll    = 3.5f;   // degrees of roll when sprinting
-    public float   turnSway      = 0.15f;  // roll per degree/tick of turn rate
+    // ── Sprint / Sway ──────────────────────────────────────────────────────
+    public boolean sprintEnabled  = true;
+    public float   turnSway       = 0.08f;  // roll per degree/tick of yaw turn
+    public float   maxTurnRoll    = 2.5f;   // clamp on turn-induced roll (degrees)
+    public float   swayYawLag     = 0.06f;  // yaw inertia coefficient
+    public float   swayPitchLag   = 3.0f;   // pitch inertia for vertical movement
+                                             // jump vy ≈ 0.42 → ~1.3° pitch lag
+
+    // ── Jump ───────────────────────────────────────────────────────────────
+    public boolean jumpEnabled   = true;
+    public float   jumpIntensity = 1.8f;   // degrees of pitch kick on jump
+    public float   jumpDecay     = 5.0f;   // trauma/sec decay (slower = lingers longer)
 
     // ── Misc ───────────────────────────────────────────────────────────────
     public boolean disableVanillaBob = true;
